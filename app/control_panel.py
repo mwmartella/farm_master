@@ -100,12 +100,14 @@ class ControlPanel(tk.Tk):
         self._build_modules()
         self._build_footer()
 
-        # centre on screen
-        self.update_idletasks()
-        w, h = self.winfo_width(), self.winfo_height()
-        x = (self.winfo_screenwidth()  - w) // 2
-        y = (self.winfo_screenheight() - h) // 2
-        self.geometry(f"+{x}+{y}")
+        # maximise on open (cross-platform)
+        ws = self.tk.call("tk", "windowingsystem")
+        if ws == "win32":
+            self.state("zoomed")
+        elif ws == "x11":
+            self.attributes("-zoomed", True)
+        else:  # aqua (macOS)
+            self.geometry(f"{self.winfo_screenwidth()}x{self.winfo_screenheight()}+0+0")
 
     # ── Header ──────────────────────────────────
 

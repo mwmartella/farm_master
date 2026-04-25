@@ -4,6 +4,133 @@ from datetime import datetime
 
 import app.api_client as api
 
+# ─────────────────────────────────────────────
+# Colour / style constants  (mirrors control_panel.py)
+# ─────────────────────────────────────────────
+
+BG_MAIN       = "#f4f1ea"
+BG_HEADER     = "#1b3a1b"
+BG_CARD       = "#ffffff"
+FG_HEADER     = "#ffffff"
+FG_SUBTITLE   = "#a8c8a0"
+FG_TITLE      = "#ffffff"
+FG_LABEL      = "#1b3a1b"
+FG_CARD_DESC  = "#555555"
+ACCENT        = "#2e6b2e"
+ACCENT_DARK   = "#174f17"
+BORDER        = "#c8dfc8"
+
+
+def _apply_style(root: tk.Misc):
+    """Configure ttk styles to match the Santa Rita Control Panel palette."""
+    style = ttk.Style(root)
+    style.theme_use("clam")
+
+    style.configure(".",
+                    background=BG_MAIN,
+                    foreground=FG_LABEL,
+                    font=("Helvetica", 10))
+
+    # Notebook
+    style.configure("TNotebook",
+                    background=BG_MAIN,
+                    borderwidth=0)
+    style.configure("TNotebook.Tab",
+                    background=BG_CARD,
+                    foreground=FG_LABEL,
+                    padding=[14, 6],
+                    font=("Helvetica", 10, "bold"))
+    style.map("TNotebook.Tab",
+              background=[("selected", ACCENT)],
+              foreground=[("selected", FG_HEADER)])
+
+    # Frames & LabelFrames
+    style.configure("TFrame",      background=BG_MAIN)
+    style.configure("TLabelframe", background=BG_MAIN,
+                    foreground=ACCENT, bordercolor=BORDER,
+                    font=("Helvetica", 10, "bold"))
+    style.configure("TLabelframe.Label", background=BG_MAIN,
+                    foreground=ACCENT, font=("Helvetica", 10, "bold"))
+
+    # Labels
+    style.configure("TLabel",
+                    background=BG_MAIN, foreground=FG_LABEL,
+                    font=("Helvetica", 10))
+
+    # Entries
+    style.configure("TEntry",
+                    fieldbackground=BG_CARD, foreground=FG_LABEL,
+                    insertcolor=FG_LABEL, bordercolor=BORDER,
+                    lightcolor=BORDER, darkcolor=BORDER)
+
+    # Combobox
+    style.configure("TCombobox",
+                    fieldbackground=BG_CARD, foreground=FG_LABEL,
+                    background=BG_CARD, bordercolor=BORDER,
+                    arrowcolor=ACCENT)
+
+    # Buttons
+    style.configure("TButton",
+                    background=ACCENT, foreground=FG_HEADER,
+                    font=("Helvetica", 10, "bold"),
+                    borderwidth=0, focusthickness=0,
+                    padding=[10, 5])
+    style.map("TButton",
+              background=[("active", ACCENT_DARK), ("pressed", ACCENT_DARK)],
+              foreground=[("active", FG_HEADER)])
+
+    # Treeview
+    style.configure("Treeview",
+                    background=BG_CARD, foreground=FG_LABEL,
+                    fieldbackground=BG_CARD,
+                    rowheight=26, borderwidth=0,
+                    font=("Helvetica", 10))
+    style.configure("Treeview.Heading",
+                    background=ACCENT, foreground=FG_HEADER,
+                    font=("Helvetica", 10, "bold"),
+                    relief="flat")
+    style.map("Treeview",
+              background=[("selected", BG_HEADER)],
+              foreground=[("selected", FG_HEADER)])
+    style.map("Treeview.Heading",
+              background=[("active", ACCENT_DARK)])
+
+    # Scrollbar
+    style.configure("TScrollbar",
+                    background=BORDER, troughcolor=BG_MAIN,
+                    arrowcolor=ACCENT)
+
+
+def _maximize(window: tk.Misc):
+    """Maximize the window in a cross-platform way."""
+    ws = window.tk.call("tk", "windowingsystem")
+    if ws == "win32":
+        window.state("zoomed")
+    elif ws == "x11":
+        window.attributes("-zoomed", True)
+    else:  # aqua (macOS)
+        w, h = window.winfo_screenwidth(), window.winfo_screenheight()
+        window.geometry(f"{w}x{h}+0+0")
+
+
+def _build_header(window: tk.Misc, title: str, subtitle: str = ""):
+    """Add a green header bar (same look as ControlPanel)."""
+    header = tk.Frame(window, bg=BG_HEADER)
+    header.pack(fill="x")
+
+    tk.Label(header, text="🌿", font=("Helvetica", 22),
+             bg=BG_HEADER, fg=FG_SUBTITLE).pack(side="left", padx=(18, 8), pady=12)
+
+    text_frame = tk.Frame(header, bg=BG_HEADER)
+    text_frame.pack(side="left", pady=8)
+    tk.Label(text_frame, text=title,
+             font=("Helvetica", 16, "bold"),
+             bg=BG_HEADER, fg=FG_TITLE).pack(anchor="w")
+    if subtitle:
+        tk.Label(text_frame, text=subtitle,
+                 font=("Helvetica", 9),
+                 bg=BG_HEADER, fg=FG_SUBTITLE).pack(anchor="w")
+
 
 # ─────────────────────────────────────────────
 # Shared Edit Dialog
@@ -15,21 +142,29 @@ class EditDialog(tk.Toplevel):
     def __init__(self, parent, title: str, fields: dict):
         super().__init__(parent)
         self.title(title)
+        self.configure(bg=BG_MAIN)
         self.resizable(False, False)
         self.grab_set()
         self.result = None
 
+        _apply_style(self)
+
+        _build_header(self, title)
+
+        inner = ttk.Frame(self)
+        inner.pack(padx=20, pady=16)
+
         self._entries = {}
         for row, (label, value) in enumerate(fields.items()):
-            ttk.Label(self, text=label + ":").grid(row=row, column=0, sticky="e", padx=10, pady=6)
-            e = ttk.Entry(self, width=30)
+            ttk.Label(inner, text=label + ":").grid(row=row, column=0, sticky="e", padx=10, pady=6)
+            e = ttk.Entry(inner, width=30)
             e.insert(0, str(value) if value is not None else "")
             e.grid(row=row, column=1, sticky="w", padx=10, pady=6)
             self._entries[label] = e
 
-        btn_frame = ttk.Frame(self)
-        btn_frame.grid(row=len(fields), column=0, columnspan=2, pady=10)
-        ttk.Button(btn_frame, text="Save", command=self._ok).pack(side="left", padx=6)
+        btn_frame = ttk.Frame(inner)
+        btn_frame.grid(row=len(fields), column=0, columnspan=2, pady=12)
+        ttk.Button(btn_frame, text="Save",   command=self._ok).pack(side="left", padx=6)
         ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="left", padx=6)
 
         self.wait_window()
@@ -45,7 +180,7 @@ class EditDialog(tk.Toplevel):
 
 def build_tree(parent, cols: list, widths: dict = None) -> ttk.Treeview:
     frame = ttk.Frame(parent)
-    frame.pack(fill="both", expand=True, padx=6, pady=6)
+    frame.pack(fill="both", expand=True, padx=10, pady=8)
 
     tree = ttk.Treeview(frame, columns=cols, show="headings", height=16)
     for col in cols:
@@ -72,11 +207,11 @@ class WorkerCodesTab(ttk.Frame):
         self.refresh()
 
     def _build_form(self):
-        form = ttk.LabelFrame(self, text="New Worker Code")
-        form.pack(fill="x", padx=10, pady=(10, 0))
+        form = ttk.LabelFrame(self, text="  New Worker Code")
+        form.pack(fill="x", padx=10, pady=(12, 0))
 
         fields = ttk.Frame(form)
-        fields.pack(side="left", padx=10, pady=8)
+        fields.pack(side="left", padx=10, pady=10)
 
         ttk.Label(fields, text="Code Name:").grid(row=0, column=0, sticky="e", padx=6, pady=4)
         self.code_name = ttk.Entry(fields, width=24)
@@ -94,10 +229,10 @@ class WorkerCodesTab(ttk.Frame):
 
     def _build_controls(self):
         bar = ttk.Frame(self)
-        bar.pack(fill="x", padx=10, pady=(6, 0))
-        ttk.Button(bar, text="⟳ Refresh", command=self.refresh).pack(side="left", padx=(0, 6))
-        ttk.Button(bar, text="✎ Edit Selected", command=self._edit).pack(side="left", padx=(0, 6))
-        ttk.Button(bar, text="⏹ End Record", command=self._end_record).pack(side="left")
+        bar.pack(fill="x", padx=10, pady=(8, 0))
+        ttk.Button(bar, text="⟳  Refresh",      command=self.refresh).pack(side="left", padx=(0, 6))
+        ttk.Button(bar, text="✎  Edit Selected", command=self._edit).pack(side="left", padx=(0, 6))
+        ttk.Button(bar, text="⏹  End Record",    command=self._end_record).pack(side="left")
 
     def _build_tree(self):
         cols = ("code_id", "code_name", "description", "pay_rate", "start_date", "end_date")
@@ -150,9 +285,9 @@ class WorkerCodesTab(ttk.Frame):
         if not row:
             return
         dlg = EditDialog(self, "Edit Worker Code", {
-            "Code Name": row["code_name"],
+            "Code Name":   row["code_name"],
             "Description": row["code_description"],
-            "Pay Rate": row["pay_rate"],
+            "Pay Rate":    row["pay_rate"],
         })
         if dlg.result is None:
             return
@@ -194,11 +329,11 @@ class WorkersTab(ttk.Frame):
         self.refresh()
 
     def _build_form(self):
-        form = ttk.LabelFrame(self, text="New Worker")
-        form.pack(fill="x", padx=10, pady=(10, 0))
+        form = ttk.LabelFrame(self, text="  New Worker")
+        form.pack(fill="x", padx=10, pady=(12, 0))
 
         fields = ttk.Frame(form)
-        fields.pack(side="left", padx=10, pady=8)
+        fields.pack(side="left", padx=10, pady=10)
 
         ttk.Label(fields, text="Worker Code:").grid(row=0, column=0, sticky="e", padx=6, pady=4)
         self.worker_code_var = tk.StringVar()
@@ -222,10 +357,10 @@ class WorkersTab(ttk.Frame):
 
     def _build_controls(self):
         bar = ttk.Frame(self)
-        bar.pack(fill="x", padx=10, pady=(6, 0))
-        ttk.Button(bar, text="⟳ Refresh", command=self.refresh).pack(side="left", padx=(0, 6))
-        ttk.Button(bar, text="✎ Edit Selected", command=self._edit).pack(side="left", padx=(0, 6))
-        ttk.Button(bar, text="⏹ End Record", command=self._end_record).pack(side="left")
+        bar.pack(fill="x", padx=10, pady=(8, 0))
+        ttk.Button(bar, text="⟳  Refresh",      command=self.refresh).pack(side="left", padx=(0, 6))
+        ttk.Button(bar, text="✎  Edit Selected", command=self._edit).pack(side="left", padx=(0, 6))
+        ttk.Button(bar, text="⏹  End Record",    command=self._end_record).pack(side="left")
 
     def _build_tree(self):
         cols = ("id", "worker_code", "first_name", "last_name", "start_date", "end_date")
@@ -248,7 +383,6 @@ class WorkersTab(ttk.Frame):
         for row in self.tree.get_children():
             self.tree.delete(row)
         try:
-            # Build a code_id -> code_name lookup from all codes (including ended)
             all_codes = {wc["code_id"]: wc["code_name"] for wc in api.get_worker_codes()}
             for w in api.get_workers():
                 self.tree.insert("", "end", iid=w["id"], values=(
@@ -269,7 +403,7 @@ class WorkersTab(ttk.Frame):
                 messagebox.showerror("Validation", "Please select a Worker Code.")
                 return
             first = self.first_name.get().strip()
-            last = self.last_name.get().strip()
+            last  = self.last_name.get().strip()
             if not first or not last:
                 messagebox.showerror("Validation", "First and Last Name are required.")
                 return
@@ -296,7 +430,7 @@ class WorkersTab(ttk.Frame):
             return
         dlg = EditDialog(self, "Edit Worker", {
             "First Name": row["first_name"],
-            "Last Name": row["last_name"],
+            "Last Name":  row["last_name"],
         })
         if dlg.result is None:
             return
@@ -332,11 +466,11 @@ class WorkerTimesTab(ttk.Frame):
         self.refresh()
 
     def _build_form(self):
-        form = ttk.LabelFrame(self, text="New Worker Time")
-        form.pack(fill="x", padx=10, pady=(10, 0))
+        form = ttk.LabelFrame(self, text="  New Worker Time")
+        form.pack(fill="x", padx=10, pady=(12, 0))
 
         fields = ttk.Frame(form)
-        fields.pack(side="left", padx=10, pady=8)
+        fields.pack(side="left", padx=10, pady=10)
 
         ttk.Label(fields, text="Time Name:").grid(row=0, column=0, sticky="e", padx=6, pady=4)
         self.time_name = ttk.Entry(fields, width=20)
@@ -354,10 +488,10 @@ class WorkerTimesTab(ttk.Frame):
 
     def _build_controls(self):
         bar = ttk.Frame(self)
-        bar.pack(fill="x", padx=10, pady=(6, 0))
-        ttk.Button(bar, text="⟳ Refresh", command=self.refresh).pack(side="left", padx=(0, 6))
-        ttk.Button(bar, text="✎ Edit Selected", command=self._edit).pack(side="left", padx=(0, 6))
-        ttk.Button(bar, text="⏹ End Record", command=self._end_record).pack(side="left")
+        bar.pack(fill="x", padx=10, pady=(8, 0))
+        ttk.Button(bar, text="⟳  Refresh",      command=self.refresh).pack(side="left", padx=(0, 6))
+        ttk.Button(bar, text="✎  Edit Selected", command=self._edit).pack(side="left", padx=(0, 6))
+        ttk.Button(bar, text="⏹  End Record",    command=self._end_record).pack(side="left")
 
     def _build_tree(self):
         cols = ("time_id", "time_name", "start_time", "end_time", "start_date", "end_date")
@@ -430,15 +564,15 @@ class WorkerTimesTab(ttk.Frame):
         if not row:
             return
         dlg = EditDialog(self, "Edit Worker Time", {
-            "Time Name": row["time_name"],
-            "Start Time (HH:MM)": (row["start_time"] or "")[:5],
-            "End Time (HH:MM)": (row["end_time"] or "")[:5],
+            "Time Name":           row["time_name"],
+            "Start Time (HH:MM)":  (row["start_time"] or "")[:5],
+            "End Time (HH:MM)":    (row["end_time"] or "")[:5],
         })
         if dlg.result is None:
             return
         try:
             start_t = self._parse_time(dlg.result["Start Time (HH:MM)"])
-            end_t = self._parse_time(dlg.result["End Time (HH:MM)"])
+            end_t   = self._parse_time(dlg.result["End Time (HH:MM)"])
             api.update_worker_time(
                 iid,
                 dlg.result["Time Name"],
@@ -465,6 +599,25 @@ class WorkerTimesTab(ttk.Frame):
 
 
 # ─────────────────────────────────────────────
+# Shared notebook builder
+# ─────────────────────────────────────────────
+
+def _build_notebook(window: tk.Misc):
+    notebook = ttk.Notebook(window)
+    notebook.pack(fill="both", expand=True, padx=10, pady=10)
+
+    workers_tab      = WorkersTab(notebook)
+    worker_codes_tab = WorkerCodesTab(notebook)
+    worker_times_tab = WorkerTimesTab(notebook)
+
+    notebook.add(workers_tab,      text="  Workers  ")
+    notebook.add(worker_codes_tab, text="  Worker Codes  ")
+    notebook.add(worker_times_tab, text="  Worker Times  ")
+
+    return notebook
+
+
+# ─────────────────────────────────────────────
 # Main App  (standalone entry-point)
 # ─────────────────────────────────────────────
 
@@ -472,18 +625,15 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Worker Management")
+        self.configure(bg=BG_MAIN)
         self.resizable(True, True)
+        self.minsize(960, 560)
 
-        notebook = ttk.Notebook(self)
-        notebook.pack(fill="both", expand=True, padx=10, pady=10)
-
-        self.worker_codes_tab = WorkerCodesTab(notebook)
-        self.workers_tab = WorkersTab(notebook)
-        self.worker_times_tab = WorkerTimesTab(notebook)
-
-        notebook.add(self.worker_codes_tab, text="  Worker Codes  ")
-        notebook.add(self.workers_tab,      text="  Workers  ")
-        notebook.add(self.worker_times_tab, text="  Worker Times  ")
+        _apply_style(self)
+        _maximize(self)
+        _build_header(self, "Worker Management",
+                      "Santa Rita Farm  •  Manage worker codes, workers & shift times")
+        _build_notebook(self)
 
 
 # ─────────────────────────────────────────────
@@ -499,25 +649,15 @@ class WorkerManagementWindow(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.title("Worker Management")
+        self.configure(bg=BG_MAIN)
         self.resizable(True, True)
-        self.minsize(900, 500)
+        self.minsize(960, 560)
 
-        # centre relative to parent
-        self.update_idletasks()
-        px = parent.winfo_x() + (parent.winfo_width()  - self.winfo_width())  // 2
-        py = parent.winfo_y() + (parent.winfo_height() - self.winfo_height()) // 2
-        self.geometry(f"+{px}+{py}")
+        _apply_style(self)
+        _maximize(self)
+        _build_header(self, "Worker Management",
+                      "Santa Rita Farm  •  Manage worker codes, workers & shift times")
+        _build_notebook(self)
 
-        notebook = ttk.Notebook(self)
-        notebook.pack(fill="both", expand=True, padx=10, pady=10)
-
-        worker_codes_tab = WorkerCodesTab(notebook)
-        workers_tab      = WorkersTab(notebook)
-        worker_times_tab = WorkerTimesTab(notebook)
-
-        notebook.add(worker_codes_tab, text="  Worker Codes  ")
-        notebook.add(workers_tab,      text="  Workers  ")
-        notebook.add(worker_times_tab, text="  Worker Times  ")
-
-        self.grab_set()   # make it modal
-
+        # centre relative to parent — skipped since we maximise
+        self.grab_set()
