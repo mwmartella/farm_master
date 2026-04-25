@@ -5,7 +5,7 @@ All GUI code should use these functions instead of touching the DB directly.
 
 import requests
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://192.168.1.15:8000"
 
 
 def _handle(response: requests.Response) -> dict:
