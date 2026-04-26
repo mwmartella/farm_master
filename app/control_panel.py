@@ -166,6 +166,12 @@ class ControlPanel(tk.Tk):
         # To add a new module, append a dict to this list.
         modules = [
             {
+                "icon":        "🏢",
+                "title":       "Organisation Management",
+                "description": "Manage businesses and farm sites.",
+                "command":     self._open_org_management,
+            },
+            {
                 "icon":        "👷",
                 "title":       "Worker Management",
                 "description": "Manage workers, worker codes and shift times.",
