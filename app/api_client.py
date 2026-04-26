@@ -109,3 +109,67 @@ def update_worker_time(time_id: str, time_name: str,
 def end_worker_time(time_id: str) -> dict:
     return _handle(requests.post(f"{BASE_URL}/worker-times/{time_id}/end"))
 
+
+# ─────────────────────────────────────────────
+# Businesses
+# ─────────────────────────────────────────────
+
+def get_businesses() -> list[dict]:
+    return _handle(requests.get(f"{BASE_URL}/businesses/"))
+
+
+def create_business(name: str, code: str | None) -> dict:
+    return _handle(requests.post(f"{BASE_URL}/businesses/", json={
+        "name": name,
+        "code": code or None,
+    }))
+
+
+def update_business(business_id: str, name: str, code: str | None) -> dict:
+    return _handle(requests.patch(f"{BASE_URL}/businesses/{business_id}", json={
+        "name": name,
+        "code": code or None,
+    }))
+
+
+def delete_business(business_id: str) -> None:
+    resp = requests.delete(f"{BASE_URL}/businesses/{business_id}")
+    resp.raise_for_status()
+
+
+# ─────────────────────────────────────────────
+# Sites
+# ─────────────────────────────────────────────
+
+def get_sites() -> list[dict]:
+    return _handle(requests.get(f"{BASE_URL}/sites/"))
+
+
+def create_site(name: str, code: str | None, business_id: str | None,
+                type_: str, address: str, notes: str | None) -> dict:
+    return _handle(requests.post(f"{BASE_URL}/sites/", json={
+        "name": name,
+        "code": code or None,
+        "business_id": business_id or None,
+        "type": type_,
+        "address": address,
+        "notes": notes or None,
+    }))
+
+
+def update_site(site_id: str, name: str, code: str | None,
+                type_: str, address: str, notes: str | None) -> dict:
+    return _handle(requests.patch(f"{BASE_URL}/sites/{site_id}", json={
+        "name": name,
+        "code": code or None,
+        "type": type_,
+        "address": address,
+        "notes": notes or None,
+    }))
+
+
+def delete_site(site_id: str) -> None:
+    resp = requests.delete(f"{BASE_URL}/sites/{site_id}")
+    resp.raise_for_status()
+
+

@@ -227,3 +227,7 @@ class ControlPanel(tk.Tk):
         from app.gui import WorkerManagementWindow
         WorkerManagementWindow(self)
 
+    def _open_org_management(self):
+        from app.org_gui import OrgManagementWindow
+        OrgManagementWindow(self)
+
