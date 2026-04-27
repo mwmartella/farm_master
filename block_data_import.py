@@ -130,9 +130,23 @@ def main():
             if br["block_id"]:
                 block_name_to_id[br["block_matched"]] = br["block_id"]
 
+    # Pre-pass: assign sequence numbers per (block_name, row_number, side)
+    # by counting occurrences in CSV order
+    sequence_counters = {}
+    portions_with_seq = []
     with open("row_portions_preview.csv", newline="") as f:
-        for i, row in enumerate(csv.DictReader(f), start=2):
+        for row in csv.DictReader(f):
+            side       = opt_str(row["side"]) or ""
+            row_number = opt_int(row["row_number"])
+            block_name = opt_str(row["block_matched"])
+            key = (block_name, row_number, side)
+            sequence_counters[key] = sequence_counters.get(key, 0) + 1
+            portions_with_seq.append((row, sequence_counters[key]))
+
+    with open("row_portions_preview.csv", newline="") as f:
+        for i, (row, seq) in enumerate(zip(csv.DictReader(f), [s for _, s in portions_with_seq]), start=2):
             variety_id = opt_str(row["variety_id"])
+            clone_id   = opt_str(row.get("clone_id", ""))
             side       = opt_str(row["side"]) or ""
             row_number = opt_int(row["row_number"])
             block_name = opt_str(row["block_matched"])
@@ -154,11 +168,13 @@ def main():
             payload = {
                 "row_id":        row_id,
                 "variety_id":    variety_id,
+                "clone_id":      clone_id or None,
                 "rootstock_id":  opt_str(row["rootstock_id"]) or None,
                 "planting_year": opt_int(row["planting_year"]),
                 "tree_count":    opt_int(row["tree_count"]),
                 "length_m":      opt_dec(row["length_m"]),
                 "area_m2":       opt_dec(row["area_m2"]),
+                "sequence_no":   seq,
             }
             payload = {k: v for k, v in payload.items() if v is not None}
 

@@ -401,7 +401,7 @@ class RowPortionsTab(ttk.Frame):
             blocks = {b["id"]: b["name"] for b in api.get_blocks()}
             self._row_map = {}
             for r in rows:
-                label = f"{blocks.get(r['block_id'], '?')} — Row {r['row_number']}{r['side'] or ''}"
+                label = f"Row {r['row_number']}{(' ' + r['side']) if r['side'] else ''}"
                 self._row_map[label] = r["id"]
 
             self._variety_map   = {v["name"]: v["id"] for v in api.get_varieties()}
