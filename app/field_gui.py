@@ -205,11 +205,11 @@ class BlockRowsTab(ttk.Frame):
                 continue
             self.tree.insert("", "end", iid=r["id"], values=(
                 r["id"][:8] + "\u2026",
-                blk_lkp.get(r["block_id"], "?"),
+                blk_lkp.get(r["block_id"], ""),
                 r["row_number"],
-                r["side"],
-                var_lkp.get(r["variety_id"], "?"),
-                cln_lkp.get(r["clone_id"], "?"),
+                r["side"] or "",
+                var_lkp.get(r["variety_id"], ""),
+                cln_lkp.get(r["clone_id"], "") if r["clone_id"] else "",
                 rs_lkp.get(r["rootstock_id"], "") if r["rootstock_id"] else "",
                 r["planting_year"] or "",
                 r["row_width_m"] or "",
