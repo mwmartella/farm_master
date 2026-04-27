@@ -37,7 +37,7 @@ def create_block_row(payload: BlockRowCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Block not found.")
     if not db.query(Variety).filter_by(id=payload.variety_id).first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variety not found.")
-    if not db.query(VarietyClone).filter_by(id=payload.clone_id).first():
+    if payload.clone_id and not db.query(VarietyClone).filter_by(id=payload.clone_id).first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variety clone not found.")
     if payload.rootstock_id and not db.query(Rootstock).filter_by(id=payload.rootstock_id).first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rootstock not found.")

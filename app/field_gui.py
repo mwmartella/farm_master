@@ -147,9 +147,8 @@ class BlockRowsTab(ttk.Frame):
         if self._variety_map:
             self.variety_cb.current(0)
 
-        self.clone_cb["values"] = list(self._clone_map.keys())
-        if self._clone_map:
-            self.clone_cb.current(0)
+        self.clone_cb["values"] = [""] + list(self._clone_map.keys())
+        self.clone_cb.current(0)
 
         self.rootstock_cb["values"] = list(self._rootstock_map.keys())
         self.rootstock_cb.current(0)
@@ -233,9 +232,6 @@ class BlockRowsTab(ttk.Frame):
         if not variety_id:
             messagebox.showerror("Validation", "Please select a Variety.", parent=_top(self))
             return None
-        if not clone_id:
-            messagebox.showerror("Validation", "Please select a Clone.", parent=_top(self))
-            return None
         try:
             row_number = int(self.row_num_entry.get().strip())
         except ValueError:
@@ -252,7 +248,7 @@ class BlockRowsTab(ttk.Frame):
             "row_number":     row_number,
             "side":           side,
             "variety_id":     str(variety_id),
-            "clone_id":       str(clone_id),
+            "clone_id":       str(clone_id) if clone_id else None,
             "rootstock_id":   str(rootstock_id) if rootstock_id else None,
             "planting_year":  _oi(self.year_entry),
             "row_width_m":    _od(self.rwidth_entry),

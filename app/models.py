@@ -179,8 +179,8 @@ class BlockRow(Base):
         Uuid(as_uuid=True), ForeignKey("varieties.id"), nullable=False
     )
 
-    clone_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), ForeignKey("variety_clones.id"), nullable=False
+    clone_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("variety_clones.id"), nullable=True
     )
 
     rootstock_id: Mapped[uuid.UUID | None] = mapped_column(

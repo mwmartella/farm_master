@@ -343,8 +343,7 @@ class BlockRowCreate(BaseModel):
     row_number: int
     side: str | None = None
     variety_id: UUID
-    clone_id: UUID
-    rootstock_id: UUID | None = None
+    clone_id: UUID | None = None
     planting_year: int | None = None
     row_width_m: Decimal | None = None
     tree_spacing_m: Decimal | None = None
@@ -377,8 +376,7 @@ class BlockRowRead(BaseModel):
     row_number: int
     side: str | None
     variety_id: UUID
-    clone_id: UUID
-    rootstock_id: UUID | None
+    clone_id: UUID | None
     planting_year: int | None
     row_width_m: Decimal | None
     tree_spacing_m: Decimal | None
