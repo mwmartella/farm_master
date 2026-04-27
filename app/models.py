@@ -159,6 +159,33 @@ class Block(Base):
     )
 
 
+class Rootstock(Base):
+    __tablename__ = "rootstocks"
+    __table_args__ = (UniqueConstraint("name", "fruit_type_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+
+    name: Mapped[str] = mapped_column(String, nullable=False)
+
+    fruit_type_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("fruit_types.id"), nullable=False
+    )
+
+    vigour_class: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    notes: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
 class VarietyClone(Base):
     __tablename__ = "variety_clones"
     __table_args__ = (UniqueConstraint("name", "variety_id"),)

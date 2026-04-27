@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.routers import worker_codes, workers, worker_times, businesses, sites, fields, fruit_types, varieties, variety_clones, blocks
+from app.routers import worker_codes, workers, worker_times, businesses, sites, fields, fruit_types, varieties, variety_clones, blocks, rootstocks
 
 app = FastAPI(
     title="Farm Master API",
@@ -17,6 +17,7 @@ app.include_router(fruit_types.router)
 app.include_router(varieties.router)
 app.include_router(variety_clones.router)
 app.include_router(blocks.router)
+app.include_router(rootstocks.router)
 
 
 @app.get("/health", tags=["Health"])

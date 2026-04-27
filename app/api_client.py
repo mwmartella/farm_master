@@ -322,3 +322,35 @@ def delete_block(block_id: str) -> None:
     resp.raise_for_status()
 
 
+# ─────────────────────────────────────────────
+# Rootstocks
+# ─────────────────────────────────────────────
+
+def get_rootstocks() -> list[dict]:
+    return _handle(requests.get(f"{BASE_URL}/rootstocks/"))
+
+
+def create_rootstock(name: str, fruit_type_id: str,
+                     vigour_class: str | None, notes: str | None) -> dict:
+    return _handle(requests.post(f"{BASE_URL}/rootstocks/", json={
+        "name": name,
+        "fruit_type_id": fruit_type_id,
+        "vigour_class": vigour_class or None,
+        "notes": notes or None,
+    }))
+
+
+def update_rootstock(rootstock_id: str, name: str,
+                     vigour_class: str | None, notes: str | None) -> dict:
+    return _handle(requests.patch(f"{BASE_URL}/rootstocks/{rootstock_id}", json={
+        "name": name,
+        "vigour_class": vigour_class or None,
+        "notes": notes or None,
+    }))
+
+
+def delete_rootstock(rootstock_id: str) -> None:
+    resp = requests.delete(f"{BASE_URL}/rootstocks/{rootstock_id}")
+    resp.raise_for_status()
+
+

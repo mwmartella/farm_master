@@ -251,6 +251,34 @@ class VarietyRead(BaseModel):
 
 
 # ─────────────────────────────────────────────
+# Rootstock Schemas
+# ─────────────────────────────────────────────
+
+class RootstockCreate(BaseModel):
+    name: str
+    fruit_type_id: UUID
+    vigour_class: str | None = None
+    notes: str | None = None
+
+
+class RootstockUpdate(BaseModel):
+    name: str | None = None
+    vigour_class: str | None = None
+    notes: str | None = None
+
+
+class RootstockRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    fruit_type_id: UUID
+    vigour_class: str | None
+    notes: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
 # Block Schemas
 # ─────────────────────────────────────────────
 

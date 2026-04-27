@@ -407,7 +407,162 @@ class PlantingMaterialWindow(tk.Toplevel):
         notebook.add(FruitTypesTab(notebook),    text="  Fruit Types  ")
         notebook.add(VarietiesTab(notebook),     text="  Varieties  ")
         notebook.add(VarietyClonesTab(notebook), text="  Variety Clones  ")
+        notebook.add(RootstocksTab(notebook),    text="  Rootstocks  ")
         self.grab_set()
+
+
+class RootstocksTab(ttk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self._fruit_type_map = {}   # label -> fruit_type_id
+        self._build_form()
+        self._build_controls()
+        self._build_tree()
+        self.refresh()
+
+    def _build_form(self):
+        form = ttk.LabelFrame(self, text="  New Rootstock")
+        form.pack(fill="x", padx=10, pady=(12, 0))
+        f = ttk.Frame(form)
+        f.pack(side="left", padx=10, pady=10)
+
+        ttk.Label(f, text="Name:").grid(row=0, column=0, sticky="e", padx=6, pady=4)
+        self.name_entry = ttk.Entry(f, width=24)
+        self.name_entry.grid(row=0, column=1, sticky="w", padx=6, pady=4)
+
+        ttk.Label(f, text="Fruit Type:").grid(row=0, column=2, sticky="e", padx=6, pady=4)
+        self.fruit_type_var = tk.StringVar()
+        self.fruit_type_cb = ttk.Combobox(f, textvariable=self.fruit_type_var,
+                                          state="readonly", width=22)
+        self.fruit_type_cb.grid(row=0, column=3, sticky="w", padx=6, pady=4)
+        ttk.Button(f, text="\u27f3", width=3,
+                   command=self._load_fruit_types).grid(row=0, column=4, padx=2)
+
+        ttk.Label(f, text="Vigour Class:").grid(row=0, column=5, sticky="e", padx=6, pady=4)
+        self.vigour_entry = ttk.Entry(f, width=16)
+        self.vigour_entry.grid(row=0, column=6, sticky="w", padx=6, pady=4)
+
+        ttk.Label(f, text="Notes (optional):").grid(row=0, column=7, sticky="e", padx=6, pady=4)
+        self.notes_entry = ttk.Entry(f, width=28)
+        self.notes_entry.grid(row=0, column=8, sticky="w", padx=6, pady=4)
+
+        ttk.Button(f, text="Save", command=self._save).grid(row=0, column=9, padx=12)
+
+        self._load_fruit_types()
+
+    def _load_fruit_types(self):
+        self._fruit_type_map.clear()
+        try:
+            for ft in api.get_fruit_types():
+                self._fruit_type_map[ft["name"]] = ft["id"]
+        except Exception as e:
+            messagebox.showerror("Error loading fruit types", str(e), parent=_top(self))
+        self.fruit_type_cb["values"] = list(self._fruit_type_map.keys())
+        if self._fruit_type_map:
+            self.fruit_type_cb.current(0)
+
+    def _build_controls(self):
+        bar = ttk.Frame(self)
+        bar.pack(fill="x", padx=10, pady=(8, 0))
+        ttk.Button(bar, text="\u27f3  Refresh",        command=self.refresh).pack(side="left", padx=(0, 6))
+        ttk.Button(bar, text="\u270e  Edit Selected",   command=self._edit).pack(side="left", padx=(0, 6))
+        ttk.Button(bar, text="\U0001f5d1  Delete Record", command=self._delete).pack(side="left")
+
+    def _build_tree(self):
+        cols = ["id", "name", "fruit_type", "vigour_class", "notes", "created_at", "updated_at"]
+        self.tree = build_tree(self, cols,
+                               {"id": 90, "name": 180, "fruit_type": 160,
+                                "vigour_class": 120, "notes": 220,
+                                "created_at": 140, "updated_at": 140})
+
+    def refresh(self):
+        self._load_fruit_types()
+        for row in self.tree.get_children():
+            self.tree.delete(row)
+        try:
+            ft_lookup = {v: k for k, v in self._fruit_type_map.items()}
+            for rs in api.get_rootstocks():
+                self.tree.insert("", "end", iid=rs["id"], values=(
+                    rs["id"][:8] + "\u2026",
+                    rs["name"],
+                    ft_lookup.get(rs["fruit_type_id"], "Unknown"),
+                    rs["vigour_class"] or "",
+                    rs["notes"] or "",
+                    (rs["created_at"] or "")[:16],
+                    (rs["updated_at"] or "")[:16],
+                ))
+        except RuntimeError as e:
+            messagebox.showerror("API Error",
+                f"Could not load rootstocks.\n\n{e}\n\n"
+                "Make sure the API server has been restarted and "
+                "'alembic upgrade head' has been run.",
+                parent=_top(self))
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=_top(self))
+
+    def _save(self):
+        name         = self.name_entry.get().strip()
+        fruit_type_id = self._fruit_type_map.get(self.fruit_type_var.get())
+        vigour_class  = self.vigour_entry.get().strip() or None
+        notes         = self.notes_entry.get().strip() or None
+        if not name:
+            messagebox.showerror("Validation", "Name is required.", parent=_top(self))
+            return
+        if not fruit_type_id:
+            messagebox.showerror("Validation", "Please select a Fruit Type.", parent=_top(self))
+            return
+        try:
+            api.create_rootstock(name, fruit_type_id, vigour_class, notes)
+            for entry in (self.name_entry, self.vigour_entry, self.notes_entry):
+                entry.delete(0, tk.END)
+            self.refresh()
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=_top(self))
+
+    def _selected_id(self):
+        sel = self.tree.selection()
+        if not sel:
+            messagebox.showwarning("Select a row", "Please select a record first.", parent=_top(self))
+            return None
+        return sel[0]
+
+    def _edit(self):
+        iid = self._selected_id()
+        if not iid:
+            return
+        row = next((rs for rs in api.get_rootstocks() if rs["id"] == iid), None)
+        if not row:
+            return
+        dlg = EditDialog(_top(self), "Edit Rootstock", {
+            "Name":         row["name"],
+            "Vigour Class": row["vigour_class"] or "",
+            "Notes":        row["notes"] or "",
+        })
+        if dlg.result is None:
+            return
+        try:
+            api.update_rootstock(
+                iid,
+                dlg.result["Name"],
+                dlg.result["Vigour Class"] or None,
+                dlg.result["Notes"] or None,
+            )
+            self.refresh()
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=_top(self))
+
+    def _delete(self):
+        iid = self._selected_id()
+        if not iid:
+            return
+        if not messagebox.askyesno("Confirm Delete",
+                                   "Permanently delete this rootstock?", parent=_top(self)):
+            return
+        try:
+            api.delete_rootstock(iid)
+            self.refresh()
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=_top(self))
 
 
 class BlocksTab(ttk.Frame):
