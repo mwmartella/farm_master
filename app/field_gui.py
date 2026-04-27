@@ -304,10 +304,13 @@ class BlockRowsTab(ttk.Frame):
 class RowPortionsTab(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
-        self._row_map       = {}   # display label -> row_id
-        self._variety_map   = {}
-        self._clone_map     = {}
-        self._rootstock_map = {}
+        self._row_map        = {}   # display label -> row_id
+        self._row_id_to_block = {}  # row_id -> block_name
+        self._row_id_to_block_id = {}  # row_id -> block_id
+        self._block_map      = {}   # block_name -> block_id
+        self._variety_map    = {}
+        self._clone_map      = {}
+        self._rootstock_map  = {}
         self._build_form()
         self._build_filter()
         self._build_controls()
@@ -317,6 +320,8 @@ class RowPortionsTab(ttk.Frame):
             self.refresh()
         except Exception as e:
             messagebox.showerror("Error", f"Could not load row portions on startup:\n{e}", parent=_top(self))
+
+    # ...existing code...
 
     def _build_form(self):
         form = ttk.LabelFrame(self, text="  New Row Portion")
@@ -355,11 +360,11 @@ class RowPortionsTab(ttk.Frame):
             e.grid(row=0, column=col + 1, sticky="w", padx=6, pady=3)
             return e
 
-        self.label_entry   = _le("Label:",        0, 14)
-        self.seq_entry     = _le("Seq #:",         2, 6)
-        self.year_entry    = _le("Plant Year:",    4, 6)
-        self.tcount_entry  = _le("Tree Count:",    6, 7)
-        self.length_entry  = _le("Length (m):",    8, 8)
+        self.label_entry   = _le("Label:",         0, 14)
+        self.seq_entry     = _le("Seq #:",          2, 6)
+        self.year_entry    = _le("Plant Year:",     4, 6)
+        self.tcount_entry  = _le("Tree Count:",     6, 7)
+        self.length_entry  = _le("Length (m):",     8, 8)
         self.area_entry    = _le("Area (m\u00b2):", 10, 9)
 
         ttk.Label(r1, text="Notes:").grid(row=0, column=12, sticky="e", padx=6, pady=3)
@@ -371,12 +376,14 @@ class RowPortionsTab(ttk.Frame):
     def _build_filter(self):
         fbar = ttk.Frame(self)
         fbar.pack(fill="x", padx=10, pady=(8, 0))
-        ttk.Label(fbar, text="Filter by Row:").pack(side="left", padx=(0, 6))
-        self.filter_var = tk.StringVar(value="\u2014 All Rows \u2014")
+        ttk.Label(fbar, text="Filter by Block:").pack(side="left", padx=(0, 6))
+        self.filter_var = tk.StringVar(value="\u2014 All Blocks \u2014")
         self.filter_cb = ttk.Combobox(fbar, textvariable=self.filter_var,
                                       state="readonly", width=28)
         self.filter_cb.pack(side="left")
         self.filter_cb.bind("<<ComboboxSelected>>", lambda _: self._apply_filter())
+
+    # ...existing code...
 
     def _build_controls(self):
         bar = ttk.Frame(self)
@@ -386,10 +393,10 @@ class RowPortionsTab(ttk.Frame):
         ttk.Button(bar, text="\U0001f5d1  Delete Record",  command=self._delete).pack(side="left")
 
     def _build_tree(self):
-        cols = ["id", "row", "label", "seq", "variety", "clone", "rootstock",
+        cols = ["id", "block", "row", "label", "seq", "variety", "clone", "rootstock",
                 "plant_year", "trees", "length_m", "area_m2", "notes",
                 "created_at", "updated_at"]
-        widths = {"id": 80, "row": 160, "label": 110, "seq": 44,
+        widths = {"id": 80, "block": 150, "row": 70, "label": 110, "seq": 44,
                   "variety": 140, "clone": 140, "rootstock": 130,
                   "plant_year": 72, "trees": 58, "length_m": 80, "area_m2": 74,
                   "notes": 180, "created_at": 128, "updated_at": 128}
@@ -397,12 +404,18 @@ class RowPortionsTab(ttk.Frame):
 
     def _load_lookups(self):
         try:
-            rows = api.get_block_rows()
+            rows   = api.get_block_rows()
             blocks = {b["id"]: b["name"] for b in api.get_blocks()}
+            self._block_map = {v: k for k, v in blocks.items()}  # name -> id
+
             self._row_map = {}
+            self._row_id_to_block    = {}
+            self._row_id_to_block_id = {}
             for r in rows:
                 label = f"Row {r['row_number']}{(' ' + r['side']) if r['side'] else ''}"
                 self._row_map[label] = r["id"]
+                self._row_id_to_block[r["id"]]    = blocks.get(r["block_id"], "")
+                self._row_id_to_block_id[r["id"]] = r["block_id"]
 
             self._variety_map   = {v["name"]: v["id"] for v in api.get_varieties()}
             self._clone_map     = {c["name"]: c["id"] for c in api.get_variety_clones()}
@@ -425,8 +438,8 @@ class RowPortionsTab(ttk.Frame):
         self.rootstock_cb["values"] = list(self._rootstock_map.keys())
         self.rootstock_cb.current(0)
 
-        all_lbl = "\u2014 All Rows \u2014"
-        choices = [all_lbl] + list(self._row_map.keys())
+        all_lbl = "\u2014 All Blocks \u2014"
+        choices = [all_lbl] + sorted(self._block_map.keys())
         current = self.filter_var.get()
         self.filter_cb["values"] = choices
         if current not in choices:
@@ -452,17 +465,22 @@ class RowPortionsTab(ttk.Frame):
     def _draw_portions(self, portions):
         for item in self.tree.get_children():
             self.tree.delete(item)
-        all_lbl   = "\u2014 All Rows \u2014"
-        filter_id = None if self.filter_var.get() == all_lbl else self._row_map.get(self.filter_var.get())
-        row_lkp   = {v: k for k, v in self._row_map.items()}
-        var_lkp   = {v: k for k, v in self._variety_map.items()}
-        cln_lkp   = {v: k for k, v in self._clone_map.items()}
-        rs_lkp    = {v: k for k, v in self._rootstock_map.items() if v is not None}
+        all_lbl      = "\u2014 All Blocks \u2014"
+        selected     = self.filter_var.get()
+        filter_block_id = None if selected == all_lbl else self._block_map.get(selected)
+
+        row_lkp = {v: k for k, v in self._row_map.items()}
+        var_lkp = {v: k for k, v in self._variety_map.items()}
+        cln_lkp = {v: k for k, v in self._clone_map.items()}
+        rs_lkp  = {v: k for k, v in self._rootstock_map.items() if v is not None}
+
         for p in portions:
-            if filter_id and p["row_id"] != filter_id:
+            row_block_id = self._row_id_to_block_id.get(p["row_id"])
+            if filter_block_id and row_block_id != filter_block_id:
                 continue
             self.tree.insert("", "end", iid=p["id"], values=(
                 p["id"][:8] + "\u2026",
+                self._row_id_to_block.get(p["row_id"], ""),
                 row_lkp.get(p["row_id"], ""),
                 p["portion_label"] or "",
                 p["sequence_no"] or "",
