@@ -378,6 +378,7 @@ class BlockRowRead(BaseModel):
     side: str | None
     variety_id: UUID
     clone_id: UUID | None
+    rootstock_id: UUID | None
     planting_year: int | None
     row_width_m: Decimal | None
     tree_spacing_m: Decimal | None
