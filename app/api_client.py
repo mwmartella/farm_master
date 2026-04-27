@@ -376,4 +376,27 @@ def delete_block_row(row_id: str) -> None:
     resp.raise_for_status()
 
 
+# ─────────────────────────────────────────────
+# Row Portions
+# ─────────────────────────────────────────────
+
+def get_row_portions(row_id: str | None = None) -> list[dict]:
+    params = {"row_id": row_id} if row_id else {}
+    return _handle(requests.get(f"{BASE_URL}/row-portions/", params=params))
+
+
+def create_row_portion(payload: dict) -> dict:
+    return _handle(requests.post(f"{BASE_URL}/row-portions/", json=payload))
+
+
+def update_row_portion(portion_id: str, payload: dict) -> dict:
+    return _handle(requests.patch(f"{BASE_URL}/row-portions/{portion_id}", json=payload))
+
+
+def delete_row_portion(portion_id: str) -> None:
+    resp = requests.delete(f"{BASE_URL}/row-portions/{portion_id}")
+    resp.raise_for_status()
+
+
+
 

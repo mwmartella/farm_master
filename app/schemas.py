@@ -342,30 +342,16 @@ class BlockRowCreate(BaseModel):
     block_id: UUID
     row_number: int
     side: str | None = None
-    variety_id: UUID
-    clone_id: UUID | None = None
-    rootstock_id: UUID | None = None
-    planting_year: int | None = None
-    row_width_m: Decimal | None = None
-    tree_spacing_m: Decimal | None = None
-    tree_count: int | None = None
     row_length_m: Decimal | None = None
-    area_m2: Decimal | None = None
+    row_width_m: Decimal | None = None
     notes: str | None = None
 
 
 class BlockRowUpdate(BaseModel):
     row_number: int | None = None
     side: str | None = None
-    variety_id: UUID | None = None
-    clone_id: UUID | None = None
-    rootstock_id: UUID | None = None
-    planting_year: int | None = None
-    row_width_m: Decimal | None = None
-    tree_spacing_m: Decimal | None = None
-    tree_count: int | None = None
     row_length_m: Decimal | None = None
-    area_m2: Decimal | None = None
+    row_width_m: Decimal | None = None
     notes: str | None = None
 
 
@@ -376,18 +362,63 @@ class BlockRowRead(BaseModel):
     block_id: UUID
     row_number: int
     side: str | None
+    row_length_m: Decimal | None
+    row_width_m: Decimal | None
+    notes: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+# ─────────────────────────────────────────────
+# RowPortion Schemas
+# ─────────────────────────────────────────────
+
+class RowPortionCreate(BaseModel):
+    row_id: UUID
+    portion_label: str | None = None
+    sequence_no: int | None = None
+    variety_id: UUID
+    clone_id: UUID | None = None
+    rootstock_id: UUID | None = None
+    planting_year: int | None = None
+    tree_count: int | None = None
+    length_m: Decimal | None = None
+    area_m2: Decimal | None = None
+    notes: str | None = None
+
+
+class RowPortionUpdate(BaseModel):
+    portion_label: str | None = None
+    sequence_no: int | None = None
+    variety_id: UUID | None = None
+    clone_id: UUID | None = None
+    rootstock_id: UUID | None = None
+    planting_year: int | None = None
+    tree_count: int | None = None
+    length_m: Decimal | None = None
+    area_m2: Decimal | None = None
+    notes: str | None = None
+
+
+class RowPortionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    row_id: UUID
+    portion_label: str | None
+    sequence_no: int | None
     variety_id: UUID
     clone_id: UUID | None
     rootstock_id: UUID | None
     planting_year: int | None
-    row_width_m: Decimal | None
-    tree_spacing_m: Decimal | None
     tree_count: int | None
-    row_length_m: Decimal | None
+    length_m: Decimal | None
     area_m2: Decimal | None
     notes: str | None
     created_at: datetime
     updated_at: datetime
+
+
 
 
 

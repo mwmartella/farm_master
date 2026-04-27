@@ -175,6 +175,36 @@ class BlockRow(Base):
 
     side: Mapped[str | None] = mapped_column(String(1), nullable=True)
 
+    row_length_m: Mapped[Decimal | None] = mapped_column(Numeric(8, 2), nullable=True)
+
+    row_width_m: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
+
+    notes: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
+class RowPortion(Base):
+    __tablename__ = "row_portions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+
+    row_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("block_rows.id"), nullable=False
+    )
+
+    portion_label: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    sequence_no: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     variety_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("varieties.id"), nullable=False
     )
@@ -189,13 +219,9 @@ class BlockRow(Base):
 
     planting_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    row_width_m: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
-
-    tree_spacing_m: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
-
     tree_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    row_length_m: Mapped[Decimal | None] = mapped_column(Numeric(8, 2), nullable=True)
+    length_m: Mapped[Decimal | None] = mapped_column(Numeric(8, 2), nullable=True)
 
     area_m2: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
 

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
-from app.models import Block, BlockRow, Rootstock, Variety, VarietyClone
+from app.models import Block, BlockRow
 from app.schemas import BlockRowCreate, BlockRowRead, BlockRowUpdate
 
 VALID_SIDES = {"N", "S", "E", "W"}
@@ -35,19 +35,13 @@ def create_block_row(payload: BlockRowCreate, db: Session = Depends(get_db)):
                             detail=f"side must be one of {sorted(VALID_SIDES)} or null.")
     if not db.query(Block).filter_by(id=payload.block_id).first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Block not found.")
-    if not db.query(Variety).filter_by(id=payload.variety_id).first():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variety not found.")
-    if payload.clone_id and not db.query(VarietyClone).filter_by(id=payload.clone_id).first():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variety clone not found.")
-    if payload.rootstock_id and not db.query(Rootstock).filter_by(id=payload.rootstock_id).first():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rootstock not found.")
 
     existing = db.query(BlockRow).filter_by(
         block_id=payload.block_id, row_number=payload.row_number, side=payload.side
     ).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                            detail=f"Row {payload.row_number}{payload.side} already exists in this block.")
+                            detail=f"Row {payload.row_number}{payload.side or ''} already exists in this block.")
 
     row = BlockRow(**payload.model_dump())
     db.add(row)
@@ -76,7 +70,7 @@ def update_block_row(row_id: UUID, payload: BlockRowUpdate, db: Session = Depend
         ).first()
         if existing and existing.id != row.id:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                                detail=f"Row {new_row_number}{new_side} already exists in this block.")
+                                detail=f"Row {new_row_number}{new_side or ''} already exists in this block.")
 
     for key, value in updates.items():
         setattr(row, key, value)
@@ -93,4 +87,3 @@ def delete_block_row(row_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Block row not found.")
     db.delete(row)
     db.commit()
-
