@@ -234,3 +234,29 @@ def delete_fruit_type(fruit_type_id: str) -> None:
     resp.raise_for_status()
 
 
+# ─────────────────────────────────────────────
+# Varieties
+# ─────────────────────────────────────────────
+
+def get_varieties() -> list[dict]:
+    return _handle(requests.get(f"{BASE_URL}/varieties/"))
+
+
+def create_variety(name: str, fruit_type_id: str) -> dict:
+    return _handle(requests.post(f"{BASE_URL}/varieties/", json={
+        "name": name,
+        "fruit_type_id": fruit_type_id,
+    }))
+
+
+def update_variety(variety_id: str, name: str) -> dict:
+    return _handle(requests.patch(f"{BASE_URL}/varieties/{variety_id}", json={
+        "name": name,
+    }))
+
+
+def delete_variety(variety_id: str) -> None:
+    resp = requests.delete(f"{BASE_URL}/varieties/{variety_id}")
+    resp.raise_for_status()
+
+

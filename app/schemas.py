@@ -227,3 +227,26 @@ class FruitTypeRead(BaseModel):
     updated_at: datetime
 
 
+# ─────────────────────────────────────────────
+# Variety Schemas
+# ─────────────────────────────────────────────
+
+class VarietyCreate(BaseModel):
+    name: str
+    fruit_type_id: UUID
+
+
+class VarietyUpdate(BaseModel):
+    name: str | None = None
+
+
+class VarietyRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    fruit_type_id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+
