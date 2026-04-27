@@ -123,25 +123,14 @@ def main():
     duplicate_portions = 0
     error_portions     = []
 
+    # Build block_matched_name → block_id from the block_rows CSV
+    block_name_to_id = {}
+    with open("block_rows_preview.csv", newline="") as bf:
+        for br in csv.DictReader(bf):
+            if br["block_id"]:
+                block_name_to_id[br["block_matched"]] = br["block_id"]
+
     with open("row_portions_preview.csv", newline="") as f:
-        reader = csv.DictReader(f)
-
-        # Build a name→id map from what we created, keyed by block_matched name
-        # so portions (which don't carry block_id) can resolve their row_id
-        block_name_to_id = {}
-        for (bid, rn, sd) in full_row_map:
-            # We need block name→id; grab it from the block rows CSV
-            pass  # filled below
-
-        # Re-read block_rows CSV to get block_matched→block_id mapping
-        with open("block_rows_preview.csv", newline="") as bf:
-            for br in csv.DictReader(bf):
-                if br["block_id"]:
-                    block_name_to_id[br["block_matched"]] = br["block_id"]
-
-        f.seek(0)
-        next(f)  # skip header
-
         for i, row in enumerate(csv.DictReader(f), start=2):
             variety_id = opt_str(row["variety_id"])
             side       = opt_str(row["side"]) or ""
@@ -179,10 +168,10 @@ def main():
                     duplicate_portions += 1
                 else:
                     created_portions += 1
-                    print(f"  CREATED portion: {row['block_matched']} row {row_number} "
+                    print(f"  CREATED portion: {block_name} row {row_number} "
                           f"— {row['variety_matched']} / {row['rootstock_matched']} {row['planting_year']}")
             except Exception as e:
-                error_portions.append((i, row["block_matched"], row_number, str(e)))
+                error_portions.append((i, block_name, row_number, str(e)))
                 print(f"  ERROR  line {i}: {e}")
 
     # ── Summary ───────────────────────────────────────────────────
