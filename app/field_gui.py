@@ -307,6 +307,8 @@ class RowPortionsTab(ttk.Frame):
         self._row_map        = {}   # display label -> row_id
         self._row_id_to_block = {}  # row_id -> block_name
         self._row_id_to_block_id = {}  # row_id -> block_id
+        self._row_id_to_number = {}  # row_id -> row_number
+        self._row_id_to_side   = {}  # row_id -> side
         self._block_map      = {}   # block_name -> block_id
         self._variety_map    = {}
         self._clone_map      = {}
@@ -393,10 +395,10 @@ class RowPortionsTab(ttk.Frame):
         ttk.Button(bar, text="\U0001f5d1  Delete Record",  command=self._delete).pack(side="left")
 
     def _build_tree(self):
-        cols = ["id", "block", "row", "label", "seq", "variety", "clone", "rootstock",
+        cols = ["id", "block", "row_number", "side", "seq", "variety", "clone", "rootstock",
                 "plant_year", "trees", "length_m", "area_m2", "notes",
                 "created_at", "updated_at"]
-        widths = {"id": 80, "block": 150, "row": 70, "label": 110, "seq": 44,
+        widths = {"id": 80, "block": 150, "row_number": 60, "side": 44, "seq": 44,
                   "variety": 140, "clone": 140, "rootstock": 130,
                   "plant_year": 72, "trees": 58, "length_m": 80, "area_m2": 74,
                   "notes": 180, "created_at": 128, "updated_at": 128}
@@ -411,11 +413,15 @@ class RowPortionsTab(ttk.Frame):
             self._row_map = {}
             self._row_id_to_block    = {}
             self._row_id_to_block_id = {}
+            self._row_id_to_number   = {}
+            self._row_id_to_side     = {}
             for r in rows:
                 label = f"Row {r['row_number']}{(' ' + r['side']) if r['side'] else ''}"
-                self._row_map[label] = r["id"]
+                self._row_map[label]             = r["id"]
                 self._row_id_to_block[r["id"]]    = blocks.get(r["block_id"], "")
                 self._row_id_to_block_id[r["id"]] = r["block_id"]
+                self._row_id_to_number[r["id"]]   = r["row_number"]
+                self._row_id_to_side[r["id"]]     = r["side"] or ""
 
             self._variety_map   = {v["name"]: v["id"] for v in api.get_varieties()}
             self._clone_map     = {c["name"]: c["id"] for c in api.get_variety_clones()}
@@ -481,8 +487,8 @@ class RowPortionsTab(ttk.Frame):
             self.tree.insert("", "end", iid=p["id"], values=(
                 p["id"][:8] + "\u2026",
                 self._row_id_to_block.get(p["row_id"], ""),
-                row_lkp.get(p["row_id"], ""),
-                p["portion_label"] or "",
+                self._row_id_to_number.get(p["row_id"], ""),
+                self._row_id_to_side.get(p["row_id"], ""),
                 p["sequence_no"] or "",
                 var_lkp.get(p["variety_id"], ""),
                 cln_lkp.get(p["clone_id"], "") if p["clone_id"] else "",
