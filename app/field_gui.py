@@ -13,6 +13,7 @@ from app.org_gui import (
     _maximize,
     _build_header,
 )
+from app.planting_gui import BlocksTab
 
 
 class FieldManagementWindow(tk.Toplevel):
@@ -35,6 +36,7 @@ class FieldManagementWindow(tk.Toplevel):
 
         fields_tab = FieldsTab(notebook)
         notebook.add(fields_tab, text="  Fields  ")
+        notebook.add(BlocksTab(notebook), text="  Blocks  ")
 
         self.grab_set()
 

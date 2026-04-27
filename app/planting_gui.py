@@ -407,7 +407,6 @@ class PlantingMaterialWindow(tk.Toplevel):
         notebook.add(FruitTypesTab(notebook),    text="  Fruit Types  ")
         notebook.add(VarietiesTab(notebook),     text="  Varieties  ")
         notebook.add(VarietyClonesTab(notebook), text="  Variety Clones  ")
-        notebook.add(BlocksTab(notebook),        text="  Blocks  ")
         self.grab_set()
 
 
